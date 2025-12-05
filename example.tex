@@ -1,0 +1,140 @@
+\documentclass{article}
+\usepackage{sdiv}
+\usepackage[margin=2cm]{geometry}
+\usepackage{amsmath}
+
+\title{Examples for the \texttt{sdiv} Package}
+\author{Joao Alberto Coelho}
+\date{2025-12-05}
+
+\begin{document}
+
+\maketitle
+
+\section{Basic Usage}
+
+\subsection{Simple Division}
+
+Division of 97 by 5:
+\[\sdiv{97}{5}\]
+
+Division of 100 by 7:
+\[\sdiv{100}{7}\]
+
+\subsection{With Circle Highlighting}
+
+Same divisions with circles highlighting the remainders:
+\[\sdiv[circle]{97}{5}\]
+
+\[\sdiv[circle]{100}{7}\]
+
+\subsection{With Arrow}
+
+Arrow showing reading direction (useful for base conversion):
+\[\sdiv[arrow]{97}{5}\]
+
+\[\sdiv[arrow]{100}{7}\]
+
+\subsection{Both Options Combined}
+
+\[\sdiv[circle,arrow]{97}{5}\]
+
+\[\sdiv[circle,arrow]{100}{7}\]
+
+\subsection{With Underline Highlighting}
+
+Underline highlighting using the uline option:
+\[\sdiv[uline]{97}{5}\]
+
+\[\sdiv[uline]{100}{7}\]
+
+\subsection{Underline with Arrow}
+
+\[\sdiv[uline,arrow]{97}{5}\]
+
+\subsection{All Three Options Combined}
+
+Circle, underline, and arrow together:
+\[\sdiv[circle,uline,arrow]{97}{5}\]
+
+\section{Base Conversion}
+
+\subsection{Binary Conversion}
+
+Converting 255 to binary (read remainders from bottom to top):
+\[\sdiv[circle,arrow]{255}{2}\]
+
+Result: $255_{10} = 11111111_2$
+
+\subsection{Octal Conversion}
+
+Converting 97 to octal:
+\[\sdiv[circle,arrow]{97}{8}\]
+
+Result: $97_{10} = 141_8$
+
+\subsection{Hexadecimal Conversion}
+
+Converting 1000 to hexadecimal:
+\[\sdiv[circle,arrow]{1000}{16}\]
+
+Result: $1000_{10} = 3\text{E}8_{16}$ (where 14 = E)
+
+\section{Custom Circle Sizes}
+
+\subsection{Smaller Circles (inner sep = 0.05)}
+
+\[\sdiv[0.05,arrow]{97}{5}\]
+
+\subsection{Default Circles (inner sep = 0.25)}
+
+\[\sdiv[circle,arrow]{97}{5}\]
+
+\subsection{Medium Circles (inner sep = 0.3)}
+
+\[\sdiv[0.3,arrow]{97}{5}\]
+
+\subsection{Larger Circles (inner sep = 0.5)}
+
+\[\sdiv[0.5,arrow]{97}{5}\]
+
+\section{Edge Cases}
+
+\subsection{Dividend Less Than Divisor}
+
+When the dividend is smaller than the divisor:
+\[\sdiv[circle]{3}{10}\]
+
+\subsection{Dividend Equal to Divisor}
+
+\[\sdiv[circle]{7}{7}\]
+
+\subsection{Dividend is Zero}
+
+\[\sdiv[circle]{0}{5}\]
+
+\subsection{Single Division Step}
+
+\[\sdiv[circle,arrow]{10}{3}\]
+
+\section{Large Numbers}
+
+\subsection{Million}
+
+\[\sdiv[circle,arrow]{1000000}{7}\]
+
+\subsection{Large Dividend, Small Divisor}
+
+\[\sdiv[circle]{9876543}{11}\]
+
+\subsection{Ten Factorial}
+
+$10! = 3628800$
+
+\[\sdiv{3628800}{11}\]
+
+\section{In-line Usage}
+
+Division can be used in-line as well: $\sdiv{42}{5}$ produces a diagram within the text, though displayed equations ($\backslash[\ldots\backslash]$) are recommended for better readability.
+
+\end{document}

@@ -1,0 +1,45 @@
+# LaTeX auxiliary files
+*.aux
+*.log
+*.out
+*.toc
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.synctex.gz(busy)
+*.bbl
+*.blg
+*.lof
+*.lot
+*.idx
+*.ind
+*.ilg
+*.glo
+*.gls
+*.ist
+*.acn
+*.acr
+*.alg
+*.glg
+*.xdy
+*.nav
+*.snm
+*.vrb
+*.bcf
+*.run.xml
+
+# OS files
+.DS_Store
+Thumbs.db
+*~
+.directory
+
+# Editor files
+*.swp
+*.swo
+*.bak
+.vscode/
+.idea/
+
+# Temporary files
+*.tmp

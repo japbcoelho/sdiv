@@ -1,0 +1,380 @@
+\documentclass{article}
+\usepackage{sdiv}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{xcolor}
+
+\lstset{
+    language=[LaTeX]TeX,
+    basicstyle=\ttfamily\small,
+    keywordstyle=\color{blue},
+    commentstyle=\color{gray},
+    stringstyle=\color{red},
+    showstringspaces=false,
+    breaklines=true,
+    frame=single,
+    backgroundcolor=\color{gray!10}
+}
+
+\title{The \texttt{sdiv} Package\\
+\large Drawing Successive Division Diagrams in \LaTeX}
+\author{Joao Alberto Coelho\\
+\texttt{japbcoelho@proton.me}}
+\date{Version 1.0.0\\2025-12-05}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+The \texttt{sdiv} package provides a simple and elegant way to draw successive division diagrams in \LaTeX. These diagrams are commonly used in mathematics education for teaching base conversion, division algorithms, and number theory concepts. The package offers customizable options for highlighting, arrows, and circle sizes.
+\end{abstract}
+
+\tableofcontents
+
+\section{Introduction}
+
+Successive division is a fundamental algorithm used primarily for converting numbers between different bases. The process involves repeatedly dividing a number by a base and recording the remainders. When read in reverse order (from bottom to top), these remainders form the digits of the number in the new base.
+
+This package provides the \verb|\sdiv| command to typeset these diagrams in a clean, professional format with automatic layout and spacing.
+
+\subsection{Requirements}
+
+\begin{itemize}
+    \item \textbf{LuaLaTeX}: This package requires LuaLaTeX for execution. It will not work with pdfLaTeX or XeLaTeX.
+    \item \textbf{TikZ}: The TikZ package is automatically loaded and used for drawing.
+\end{itemize}
+
+\subsection{Installation}
+
+\subsubsection{Via CTAN (when available)}
+
+Once the package is available on CTAN, you can install it using your TeX distribution's package manager:
+
+\begin{lstlisting}[language=bash]
+tlmgr install sdiv
+\end{lstlisting}
+
+\subsubsection{Manual Installation}
+
+Download \texttt{sdiv.sty} and place it either:
+\begin{itemize}
+    \item In your local \texttt{texmf} tree (run \texttt{texhash} afterward)
+    \item In the same directory as your \texttt{.tex} file
+\end{itemize}
+
+\section{Basic Usage}
+
+\subsection{Loading the Package}
+
+\begin{lstlisting}
+\usepackage{sdiv}
+\end{lstlisting}
+
+\subsection{The \texttt{\textbackslash sdiv} Command}
+
+The main command provided by this package is:
+
+\begin{lstlisting}
+\sdiv[options]{dividend}{divisor}
+\end{lstlisting}
+
+\begin{description}
+    \item[\texttt{options}] (Optional) Comma-separated list of options
+    \item[\texttt{dividend}] Non-negative integer to be divided
+    \item[\texttt{divisor}] Positive integer (the base for conversion)
+\end{description}
+
+\subsection{Simple Example}
+
+\begin{lstlisting}
+\[\sdiv{97}{5}\]
+\end{lstlisting}
+
+\noindent produces:
+
+\[\sdiv{97}{5}\]
+
+\section{Options}
+
+\subsection{Circle Highlighting}
+
+Use \texttt{circle} or \texttt{highlight} to draw circles around the remainders and the final quotient:
+
+\begin{lstlisting}
+\[\sdiv[circle]{97}{5}\]
+\end{lstlisting}
+
+\[\sdiv[circle]{97}{5}\]
+
+\subsection{Arrow}
+
+Use \texttt{arrow} to add an arrow showing the reading direction (useful for base conversion):
+
+\begin{lstlisting}
+\[\sdiv[arrow]{97}{5}\]
+\end{lstlisting}
+
+\[\sdiv[arrow]{97}{5}\]
+
+\subsection{Underline Highlighting}
+
+Use \texttt{uline} to underline the remainders and the final quotient using the ulem package:
+
+\begin{lstlisting}
+\[\sdiv[uline]{97}{5}\]
+\end{lstlisting}
+
+\[\sdiv[uline]{97}{5}\]
+
+This provides an alternative to circles for highlighting important values.
+
+\subsection{Combining Options}
+
+Options can be combined using commas:
+
+\begin{lstlisting}
+\[\sdiv[circle,arrow]{97}{5}\]
+\[\sdiv[uline,arrow]{97}{5}\]
+\[\sdiv[circle,uline,arrow]{97}{5}\]
+\end{lstlisting}
+
+\[\sdiv[circle,arrow]{97}{5}\]
+
+\[\sdiv[uline,arrow]{97}{5}\]
+
+\[\sdiv[circle,uline,arrow]{97}{5}\]
+
+\subsection{Custom Circle Size}
+
+You can specify a custom inner sep value (in em units) for the circles by providing a number:
+
+\begin{lstlisting}
+\[\sdiv[0.5,arrow]{97}{5}\]
+\end{lstlisting}
+
+\[\sdiv[0.5,arrow]{97}{5}\]
+
+When a numeric value is specified, circles are automatically enabled. Values typically range from 0.05 (tight) to 1.0 (large). The default is 0.25 when using the \texttt{circle} option without specifying a value.
+
+\subsection{Comparison of Circle Sizes}
+
+\begin{center}
+\begin{tabular}{|c|c|}
+\hline
+\textbf{Inner Sep} & \textbf{Result} \\
+\hline
+0.05 & $\sdiv[0.05]{42}{5}$ \\
+\hline
+0.25 (default) & $\sdiv[circle]{42}{5}$ \\
+\hline
+0.3 & $\sdiv[0.3]{42}{5}$ \\
+\hline
+0.5 & $\sdiv[0.5]{42}{5}$ \\
+\hline
+\end{tabular}
+\end{center}
+
+\section{Applications}
+
+\subsection{Base Conversion}
+
+The primary use case is converting numbers between bases. The remainders, read from bottom to top, give the digits in the new base.
+
+\subsubsection{Binary (Base 2)}
+
+Converting 13 to binary:
+
+\begin{lstlisting}
+\[\sdiv[circle,arrow]{13}{2}\]
+\end{lstlisting}
+
+\[\sdiv[circle,arrow]{13}{2}\]
+
+Reading from bottom to top: $13_{10} = 1101_2$
+
+\subsubsection{Octal (Base 8)}
+
+Converting 97 to octal:
+
+\begin{lstlisting}
+\[\sdiv[circle,arrow]{97}{8}\]
+\end{lstlisting}
+
+\[\sdiv[circle,arrow]{97}{8}\]
+
+Result: $97_{10} = 141_8$
+
+\subsubsection{Hexadecimal (Base 16)}
+
+Converting 1000 to hexadecimal:
+
+\begin{lstlisting}
+\[\sdiv[circle,arrow]{1000}{16}\]
+\end{lstlisting}
+
+\[\sdiv[circle,arrow]{1000}{16}\]
+
+Result: $1000_{10} = 3\text{E}8_{16}$ (where remainder 14 = E)
+
+\subsection{Teaching Division}
+
+The diagrams can also be used to visualize the division algorithm in general mathematics courses:
+
+\[\sdiv[circle]{100}{7}\]
+
+This shows that $100 \div 7 = 14$ remainder 2.
+
+\section{Input Validation}
+
+The package validates all inputs and produces clear error messages:
+
+\begin{description}
+    \item[Non-integer inputs] Error: ``Dividend must be an integer''
+    \item[Zero divisor] Error: ``Divisor cannot be zero''
+    \item[Negative dividend] Error: ``Dividend must be non-negative''
+    \item[Non-positive divisor] Error: ``Divisor must be positive''
+\end{description}
+
+\section{Layout and Spacing}
+
+The package uses intelligent spacing to ensure:
+\begin{itemize}
+    \item Numbers remain at a fixed distance from vertical bars
+    \item Circles do not overlap with numbers or bars
+    \item Columns are properly aligned
+    \item Large numbers are handled gracefully
+\end{itemize}
+
+\subsection{Fixed Gap}
+
+All numbers are positioned at a fixed distance (0.2em) from their adjacent vertical bars, regardless of circle size. This ensures consistent layout.
+
+\subsection{Dynamic Column Width}
+
+Column widths adjust automatically based on:
+\begin{itemize}
+    \item The width of numbers in that column
+    \item The size of circles (if present)
+    \item Padding to prevent overlap
+\end{itemize}
+
+\section{Examples}
+
+\subsection{Edge Cases}
+
+\subsubsection{Dividend Less Than Divisor}
+
+\begin{lstlisting}
+\[\sdiv[circle]{3}{10}\]
+\end{lstlisting}
+
+\[\sdiv[circle]{3}{10}\]
+
+\subsubsection{Dividend Equal to Divisor}
+
+\begin{lstlisting}
+\[\sdiv[circle]{7}{7}\]
+\end{lstlisting}
+
+\[\sdiv[circle]{7}{7}\]
+
+\subsubsection{Zero Dividend}
+
+\begin{lstlisting}
+\[\sdiv[circle]{0}{5}\]
+\end{lstlisting}
+
+\[\sdiv[circle]{0}{5}\]
+
+\subsection{Large Numbers}
+
+The package handles large numbers well:
+
+\begin{lstlisting}
+\[\sdiv[circle,arrow]{1000000}{7}\]
+\end{lstlisting}
+
+\[\sdiv[circle,arrow]{1000000}{7}\]
+
+\section{Known Limitations}
+
+\subsection{LuaLaTeX Only}
+
+This package uses Lua code for calculations and layout. It requires LuaLaTeX and will not work with pdfLaTeX or XeLaTeX.
+
+\subsection{Circle Overlap with Large Inner Sep}
+
+When using very large custom inner sep values (greater than approximately 2.0), the circles may overlap with the vertical bars. This is a known issue that will be addressed in a future version.
+
+\textbf{Workaround:} Use moderate inner sep values (less than 1.0) for best results. The default value of 0.25 is suitable for most use cases.
+
+\subsection{Font Dependency}
+
+The package uses an approximate character width of 0.55em. This works well for most fonts but may need adjustment for very narrow or very wide fonts. This will be made customizable in a future version.
+
+\section{Future Enhancements}
+
+Potential improvements for future versions include:
+
+\begin{itemize}
+    \item Better handling of very large inner sep values
+    \item Customizable character width constant
+    \item Optional vertical layout (instead of horizontal)
+    \item Color customization for circles and arrows
+    \item Alternative arrow styles
+    \item Support for custom fonts
+\end{itemize}
+
+\section{Technical Details}
+
+\subsection{Implementation}
+
+The package is implemented using:
+\begin{itemize}
+    \item \textbf{Lua} for the successive division algorithm and layout calculations
+    \item \textbf{TikZ} for drawing the diagram elements
+    \item \textbf{Dynamic positioning} based on number widths and circle sizes
+\end{itemize}
+
+\subsection{Algorithm}
+
+The successive division algorithm:
+\begin{enumerate}
+    \item Divide the current number by the divisor
+    \item Record the quotient and remainder
+    \item Set the current number to the quotient
+    \item Repeat until the current number is less than the divisor
+\end{enumerate}
+
+\section{License}
+
+This work may be distributed and/or modified under the conditions of the LaTeX Project Public License, either version 1.3c of this license or (at your option) any later version.
+
+The latest version of this license is at:
+\begin{center}
+\url{http://www.latex-project.org/lppl.txt}
+\end{center}
+
+This work has the LPPL maintenance status ``maintained''.
+
+\section{Contact}
+
+Bug reports, suggestions, and contributions are welcome:
+
+\begin{description}
+    \item[Email] \texttt{japbcoelho@proton.me}
+    \item[Author] Joao Alberto Coelho
+\end{description}
+
+\section{Version History}
+
+\begin{description}
+    \item[v1.0.0 (2025-12-05)] Initial release
+\end{description}
+
+For detailed changes, see \texttt{CHANGELOG.md}.
+
+\end{document}
