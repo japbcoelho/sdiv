@@ -1,13 +1,13 @@
-# sdiv
+# divdiagram
 
 [![License: LPPL v1.3c](https://img.shields.io/badge/License-LPPL%20v1.3c-blue.svg)](https://www.latex-project.org/lppl.txt)
-[![Version](https://img.shields.io/badge/version-1.0.0-green.svg)](https://github.com/japbcoelho/sdiv)
+[![Version](https://img.shields.io/badge/version-1.0.0-green.svg)](https://github.com/japbcoelho/divdiagram)
 
 A LaTeX package for drawing successive division diagrams (commonly used for base conversion).
 
 ## Description
 
-The `sdiv` package provides the `\sdiv` command to typeset successive division diagrams in a clean, customizable format. These diagrams are particularly useful for:
+The `divdiagram` package provides the `\sdiv` command to typeset successive division diagrams in a clean, customizable format. These diagrams are particularly useful for:
 
 - Converting numbers between bases
 - Teaching division algorithms
@@ -29,12 +29,12 @@ The `sdiv` package provides the `\sdiv` command to typeset successive division d
 
 ```bash
 # Clone the repository
-git clone https://github.com/japbcoelho/sdiv.git
-cd sdiv
+git clone https://github.com/japbcoelho/divdiagram.git
+cd divdiagram
 
 # Copy to your local texmf tree
-mkdir -p ~/texmf/tex/latex/sdiv
-cp sdiv.sty ~/texmf/tex/latex/sdiv/
+mkdir -p ~/texmf/tex/latex/divdiagram
+cp divdiagram.sty ~/texmf/tex/latex/divdiagram/
 texhash ~/texmf
 ```
 
@@ -43,24 +43,24 @@ texhash ~/texmf
 Once available on CTAN, install using your TeX distribution's package manager:
 
 ```bash
-tlmgr install sdiv
+tlmgr install divdiagram
 ```
 
 ### Manual Installation
 
-1. Download `sdiv.sty` from the [releases page](https://github.com/japbcoelho/sdiv/releases)
+1. Download `divdiagram.sty` from the [releases page](https://github.com/japbcoelho/divdiagram/releases)
 2. Place it in your local `texmf` tree:
-   - Linux/Mac: `~/texmf/tex/latex/sdiv/`
-   - Windows: `C:\Users\<username>\texmf\tex\latex\sdiv\`
+   - Linux/Mac: `~/texmf/tex/latex/divdiagram/`
+   - Windows: `C:\Users\<username>\texmf\tex\latex\divdiagram\`
 3. Run `texhash` or `mktexlsr`
 
-Or simply place `sdiv.sty` in the same directory as your `.tex` file.
+Or simply place `divdiagram.sty` in the same directory as your `.tex` file.
 
 ## Basic Usage
 
 ```latex
 \documentclass{article}
-\usepackage{sdiv}
+\usepackage{divdiagram}
 
 \begin{document}
 % Basic division: 97 ÷ 5
@@ -103,7 +103,7 @@ Or simply place `sdiv.sty` in the same directory as your `.tex` file.
 
 ## Examples
 
-See `example.tex` for comprehensive examples including:
+See `sdiv-example.tex` for comprehensive examples including:
 - Simple divisions
 - Base conversion (binary, octal, hexadecimal)
 - Large numbers
@@ -145,5 +145,5 @@ For bug reports and feature requests, please open an issue on GitHub.
 
 ## See Also
 
-- Documentation: `sdiv.pdf`
-- Example file: `example.tex`
+- Documentation: `divdiagram.pdf`
+- Example file: `divdiagram-example.tex`

@@ -1,5 +1,5 @@
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesPackage{sdiv}[2025/12/05 v1.0.0 Successive Division Package]
+\ProvidesPackage{divdiagram}[2025/12/06 v1.3.0 Division Diagram Package]
 
 % Author: Joao Alberto Coelho
 % Email: japbcoelho@proton.me
@@ -25,15 +25,23 @@ local FIXED_GAP = 0.2                -- Fixed gap between numbers and bars
 
 -- Perform successive division algorithm
 -- Returns table of {quotient, remainder} pairs
-function successive_division(dividend, divisor)
+-- max_iterations: optional limit on number of divisions (nil = no limit)
+function successive_division(dividend, divisor, max_iterations)
     local results = {}
     local current = dividend
+    local iterations = 0
 
     while current >= divisor do
+        -- Check if we've reached the iteration limit
+        if max_iterations and iterations >= max_iterations then
+            break
+        end
+
         local quotient = math.floor(current / divisor)
         local remainder = current % divisor
         table.insert(results, {quotient = quotient, remainder = remainder})
         current = quotient
+        iterations = iterations + 1
     end
 
     -- Handle case where dividend < divisor
@@ -47,7 +55,13 @@ end
 -- Main drawing function
 -- dividend: non-negative integer
 -- divisor: positive integer
--- options: comma-separated string (e.g., "circle,arrow" or "0.5,arrow")
+-- options: comma-separated string (e.g., "circle,arrow" or "0.5,arrow,stop=2")
+--   Available options:
+--     circle, highlight: draw circles around remainders
+--     uline: underline last quotient and remainder
+--     arrow: show reading direction arrow
+--     stop=N: stop after N divisions (default: continue until complete)
+--     numeric value: custom inner sep for circles
 function draw_division(dividend, divisor, options)
     -- Validate dividend is integer
     if math.floor(dividend) ~= dividend then
@@ -79,18 +93,40 @@ function draw_division(dividend, divisor, options)
         return
     end
 
-    -- Perform successive division
-    local results = successive_division(dividend, divisor)
-    local n = #results
-
     -- Parse options
     local opts = options or ""
     local highlight = opts:match("%f[%a]highlight%f[%A]") ~= nil or opts:match("%f[%a]circle%f[%A]") ~= nil
     local use_uline = opts:match("%f[%a]uline%f[%A]") ~= nil
     local arrow = opts:match("%f[%a]arrow%f[%A]") ~= nil
 
-    -- Check for custom inner sep (numeric value in options)
-    local custom_inner_sep = opts:match("([%d%.]+)")
+    -- Parse stop option (stop=N)
+    local stop_at = opts:match("stop%s*=%s*(%d+)")
+    local max_iterations = nil
+    if stop_at then
+        max_iterations = tonumber(stop_at)
+        if not max_iterations or max_iterations < 1 then
+            tex.error("stop value must be a positive integer, received: " .. tostring(stop_at))
+            return
+        end
+    end
+
+    -- Perform successive division
+    local results = successive_division(dividend, divisor, max_iterations)
+    local n = #results
+
+    -- Check for custom inner sep (standalone numeric value in options)
+    -- Match a number that is NOT part of a key=value pair
+    local custom_inner_sep = nil
+    -- Split options by comma and check each token
+    for token in (opts .. ","):gmatch("([^,]*),") do
+        token = token:match("^%s*(.-)%s*$")  -- trim whitespace
+        -- Check if token is purely numeric (not a key=value pair)
+        if token:match("^[%d%.]+$") and not token:match("=") then
+            custom_inner_sep = token
+            break
+        end
+    end
+
     local circle_inner_sep = CIRCLE_INNER_SEP
 
     -- If 'circle' option is used without a numeric value, default to 0.25
@@ -123,61 +159,70 @@ function draw_division(dividend, divisor, options)
 
     local circle_gap = math.max(BASE_GAP, max_circle_extra + CIRCLE_PADDING)
 
-    -- Calculate positions of vertical bars
-    local bar_positions = {}
+    -- FIRST PASS: Calculate maximum width for each column to ensure alignment
+    local max_column_widths = {}
 
-    -- First bar position: enough space for dividend and first remainder circle
-    local first_rem_center = dividend_width / 2
-    local left_space = math.max(dividend_width, first_rem_center + max_circle_extra + CIRCLE_PADDING)
+    -- Column 1: dividend and first remainder
+    local col1_width = math.max(dividend_width, string.len(tostring(results[1].remainder)) * CHAR_WIDTH)
+    max_column_widths[1] = col1_width
+
+    -- Subsequent columns: quotient from previous step and remainder from current step
+    for i = 2, n do
+        local prev_quot_width = string.len(tostring(results[i-1].quotient)) * CHAR_WIDTH
+        local curr_rem_width = string.len(tostring(results[i].remainder)) * CHAR_WIDTH
+        max_column_widths[i] = math.max(prev_quot_width, curr_rem_width)
+    end
+
+    -- Last column: just the last quotient
+    local last_quot_width = string.len(tostring(results[n].quotient)) * CHAR_WIDTH
+    max_column_widths[n+1] = last_quot_width
+
+    -- Calculate positions of vertical bars based on maximum column widths
+    local bar_positions = {}
+    local column_centers = {}  -- Store the center x-position of each column
+
+    -- First bar position
+    local left_space = max_column_widths[1]
+    if highlight then
+        left_space = math.max(left_space, max_column_widths[1] / 2 + max_circle_extra + CIRCLE_PADDING)
+    end
     bar_positions[1] = left_space + FIXED_GAP
+    column_centers[1] = bar_positions[1] - FIXED_GAP - max_column_widths[1] / 2
 
     -- Subsequent bar positions
     for i = 2, n do
-        local prev_quot_width = string.len(tostring(results[i-1].quotient)) * CHAR_WIDTH
-        local prev_quot_center = prev_quot_width / 2
-
-        local rem_width = string.len(tostring(results[i].remainder)) * CHAR_WIDTH
-        local rem_center = rem_width / 2
-
-        -- Calculate space needed for quotient and remainder
-        local space_for_quot = prev_quot_width
-        local space_for_rem = rem_width
+        local column_width = max_column_widths[i]
 
         if highlight then
-            space_for_quot = math.max(prev_quot_width, prev_quot_center + max_circle_extra + CIRCLE_PADDING)
-            space_for_rem = math.max(rem_width, rem_center + max_circle_extra + CIRCLE_PADDING)
+            column_width = math.max(column_width, max_column_widths[i] / 2 + max_circle_extra + CIRCLE_PADDING)
         end
 
-        local column_width = math.max(space_for_quot, space_for_rem)
         bar_positions[i] = bar_positions[i-1] + FIXED_GAP + column_width + FIXED_GAP
+        column_centers[i] = bar_positions[i-1] + FIXED_GAP + max_column_widths[i] / 2
     end
+
+    -- Last column center (for last quotient)
+    column_centers[n+1] = bar_positions[n] + FIXED_GAP + max_column_widths[n+1] / 2
 
     -- Begin TikZ picture
     tex.print("\\begin{tikzpicture}[every node/.style={minimum height=1.4em}, x=1em, y=1.4em]")
 
-    -- Draw dividend (top left, aligned to first bar)
-    tex.print(string.format("\\node[anchor=east] at (%.2f, 0) (div) {%s};",
-        bar_positions[1] - FIXED_GAP, dividend))
+    -- Draw dividend (top left, aligned to first column center)
+    tex.print(string.format("\\node at (%.2f, 0) (div) {%s};",
+        column_centers[1], dividend))
 
     -- Draw each division step
     for i = 1, n do
         local quot = results[i].quotient
         local rem = results[i].remainder
 
-        -- Draw divisor (top right of bar i)
+        -- Draw divisor (aligned left at fixed distance from bar)
         tex.print(string.format("\\node[anchor=west] at (%.2f, %d) (d%d) {%s};",
             bar_positions[i] + FIXED_GAP, -(i-1), i, divisor))
 
-        -- Calculate remainder center x-position (aligned with dividend/quotient above)
-        local rem_center_x
-        if i == 1 then
-            rem_center_x = bar_positions[1] - FIXED_GAP - dividend_width / 2
-        else
-            local prev_quot_width = string.len(tostring(results[i-1].quotient)) * CHAR_WIDTH
-            rem_center_x = bar_positions[i-1] + FIXED_GAP + prev_quot_width / 2
-        end
+        -- Draw remainder at column center (ALWAYS aligned with dividend)
+        local rem_center_x = column_centers[i]
 
-        -- Draw remainder
         if use_uline then
             tex.print(string.format("\\node at (%.2f, %d) (r%d) {\\uline{%s}};",
                 rem_center_x, -i, i, rem))
@@ -193,22 +238,19 @@ function draw_division(dividend, divisor, options)
                 rem_width / 2 + circle_inner_sep))
         end
 
-        -- Calculate quotient center x-position
-        local quot_width = string.len(tostring(quot)) * CHAR_WIDTH
-        local quot_center_x = bar_positions[i] + FIXED_GAP + quot_width / 2
-
-        -- Draw quotient
+        -- Draw quotient (aligned left at same distance from bar as divisor)
         local is_last = (i == n)
         if use_uline and is_last then
-            tex.print(string.format("\\node at (%.2f, %d) (q%d) {\\uline{%s}};",
-                quot_center_x, -i, i, quot))
+            tex.print(string.format("\\node[anchor=west] at (%.2f, %d) (q%d) {\\uline{%s}};",
+                bar_positions[i] + FIXED_GAP, -i, i, quot))
         else
-            tex.print(string.format("\\node at (%.2f, %d) (q%d) {%s};",
-                quot_center_x, -i, i, quot))
+            tex.print(string.format("\\node[anchor=west] at (%.2f, %d) (q%d) {%s};",
+                bar_positions[i] + FIXED_GAP, -i, i, quot))
         end
 
         -- Draw circle around last quotient if highlighting
         if highlight and is_last then
+            local quot_width = string.len(tostring(quot)) * CHAR_WIDTH
             tex.print(string.format("\\draw (q%d) circle[radius=%.3fem];", i,
                 quot_width / 2 + circle_inner_sep))
         end
@@ -221,14 +263,18 @@ function draw_division(dividend, divisor, options)
             tex.print(string.format("\\draw (d%d.north west) |- (d%d.north west);", i, i+1))
         else
             -- Last bar extends to the right
-            local quot_width = string.len(tostring(results[i].quotient)) * CHAR_WIDTH
-            local quot_right_x = bar_positions[i] + FIXED_GAP + quot_width
+            -- Use the maximum column width for proper alignment
+            local quot_right_x = column_centers[n+1] + max_column_widths[n+1] / 2
             local end_x = quot_right_x + BAR_END_PADDING
 
             -- Extend further if circles are present
             if highlight then
-                end_x = quot_right_x + circle_inner_sep + BAR_END_PADDING
+                end_x = column_centers[n+1] + max_circle_extra + BAR_END_PADDING
             end
+
+            -- Ensure the bar extends at least to the end of the divisor
+            local divisor_right_x = bar_positions[i] + FIXED_GAP + divisor_width
+            end_x = math.max(end_x, divisor_right_x + BAR_END_PADDING)
 
             tex.print(string.format("\\draw (d%d.north west) |- (%.2f, %.2f);",
                 i, end_x, -i + BAR_VERTICAL_OFFSET))
@@ -237,17 +283,15 @@ function draw_division(dividend, divisor, options)
 
     -- Draw arrow (for base conversion reading direction)
     if arrow then
-        local last_quot_width = string.len(tostring(results[n].quotient)) * CHAR_WIDTH
-
-        -- Arrow starts below last quotient
-        local x1 = bar_positions[n] + FIXED_GAP + last_quot_width / 2
+        -- Arrow starts below last quotient (using column center for alignment)
+        local x1 = column_centers[n+1]
         local y1 = -n - ARROW_OFFSET_Y
 
         -- Goes horizontally left
         local x2 = bar_positions[n] - FIXED_GAP
 
-        -- Then diagonally to below first remainder
-        local x3 = bar_positions[1] - FIXED_GAP - dividend_width / 2
+        -- Then diagonally to below first remainder (using column center for alignment)
+        local x3 = column_centers[1]
         local y3 = -1 - ARROW_OFFSET_Y
 
         tex.print(string.format("\\draw[->, thick] (%.2f, %.2f) -- (%.2f, %.2f) -- (%.2f, %.2f);",
@@ -259,10 +303,18 @@ function draw_division(dividend, divisor, options)
 end
 \end{luacode*}
 
-% User command: \sdiv[options]{dividend}{divisor}
-% Options: circle, highlight, uline, arrow, or numeric value for custom inner sep
-\newcommand{\sdiv}[3][]{%
+% User command: \divdiagram[options]{dividend}{divisor}
+% Options:
+%   - circle, highlight: draw circles around remainders
+%   - uline: underline last quotient and remainder
+%   - arrow: show reading direction arrow
+%   - stop=N: stop after N divisions (default: continue until complete)
+%   - numeric value: custom inner sep for circles (e.g., 0.5)
+\newcommand{\divdiagram}[3][]{%
     \directlua{draw_division(#2, #3, "#1")}%
 }
+
+% Backward compatibility alias
+\let\sdiv\divdiagram
 
 \endinput

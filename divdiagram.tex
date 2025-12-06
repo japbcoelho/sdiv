@@ -1,5 +1,5 @@
 \documentclass{article}
-\usepackage{sdiv}
+\usepackage{divdiagram}
 \usepackage[margin=2.5cm]{geometry}
 \usepackage{amsmath}
 \usepackage{hyperref}
@@ -18,7 +18,7 @@
     backgroundcolor=\color{gray!10}
 }
 
-\title{The \texttt{sdiv} Package\\
+\title{The \texttt{divdiagram} Package\\
 \large Drawing Successive Division Diagrams in \LaTeX}
 \author{Joao Alberto Coelho\\
 \texttt{japbcoelho@proton.me}}
@@ -29,7 +29,7 @@
 \maketitle
 
 \begin{abstract}
-The \texttt{sdiv} package provides a simple and elegant way to draw successive division diagrams in \LaTeX. These diagrams are commonly used in mathematics education for teaching base conversion, division algorithms, and number theory concepts. The package offers customizable options for highlighting, arrows, and circle sizes.
+The \texttt{divdiagram} package provides a simple and elegant way to draw successive division diagrams in \LaTeX. These diagrams are commonly used in mathematics education for teaching base conversion, division algorithms, and number theory concepts. The package offers customizable options for highlighting, arrows, and circle sizes.
 \end{abstract}
 
 \tableofcontents
@@ -54,12 +54,12 @@ This package provides the \verb|\sdiv| command to typeset these diagrams in a cl
 Once the package is available on CTAN, you can install it using your TeX distribution's package manager:
 
 \begin{lstlisting}[language=bash]
-tlmgr install sdiv
+tlmgr install divdiagram
 \end{lstlisting}
 
 \subsubsection{Manual Installation}
 
-Download \texttt{sdiv.sty} and place it either:
+Download \texttt{divdiagram.sty} and place it either:
 \begin{itemize}
     \item In your local \texttt{texmf} tree (run \texttt{texhash} afterward)
     \item In the same directory as your \texttt{.tex} file
@@ -70,7 +70,7 @@ Download \texttt{sdiv.sty} and place it either:
 \subsection{Loading the Package}
 
 \begin{lstlisting}
-\usepackage{sdiv}
+\usepackage{divdiagram}
 \end{lstlisting}
 
 \subsection{The \texttt{\textbackslash sdiv} Command}
