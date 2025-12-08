@@ -9,6 +9,7 @@
 \RequirePackage{tikz}
 \RequirePackage{luacode}
 \RequirePackage[normalem]{ulem}
+\RequirePackage{xcolor}
 
 \begin{luacode*}
 -- Layout constants (in em units)
@@ -30,6 +31,12 @@ function successive_division(dividend, divisor, max_iterations)
     local results = {}
     local current = dividend
     local iterations = 0
+
+    -- Special case: division by 1 always gives one step (quotient=dividend, remainder=0)
+    if divisor == 1 then
+        table.insert(results, {quotient = dividend, remainder = 0})
+        return results
+    end
 
     while current >= divisor do
         -- Check if we've reached the iteration limit
@@ -55,13 +62,16 @@ end
 -- Main drawing function
 -- dividend: non-negative integer
 -- divisor: positive integer
--- options: comma-separated string (e.g., "circle,arrow" or "0.5,arrow,stop=2")
+-- options: comma-separated string (e.g., "circle,arrow" or "highlight=yellow,arrow=1.5,stop=2")
 --   Available options:
---     circle, highlight: draw circles around remainders
+--     circle: draw circles around remainders (default radius: 0.25)
+--     circle=N: draw circles with custom radius N
+--     highlight: add colorbox background to remainders (default: lightgray)
+--     highlight=color: add colorbox with custom color
 --     uline: underline last quotient and remainder
---     arrow: show reading direction arrow
+--     arrow: show reading direction arrow (default offset: 1.05)
+--     arrow=N: show arrow with custom vertical offset N
 --     stop=N: stop after N divisions (default: continue until complete)
---     numeric value: custom inner sep for circles
 function draw_division(dividend, divisor, options)
     -- Validate dividend is integer
     if math.floor(dividend) ~= dividend then
@@ -95,9 +105,36 @@ function draw_division(dividend, divisor, options)
 
     -- Parse options
     local opts = options or ""
-    local highlight = opts:match("%f[%a]highlight%f[%A]") ~= nil or opts:match("%f[%a]circle%f[%A]") ~= nil
+    local use_circle = opts:match("%f[%a]circle%f[%A]") ~= nil
+    local use_highlight = opts:match("%f[%a]highlight%f[%A]") ~= nil
     local use_uline = opts:match("%f[%a]uline%f[%A]") ~= nil
     local arrow = opts:match("%f[%a]arrow%f[%A]") ~= nil
+
+    -- Parse highlight option with optional color (highlight=color)
+    local highlight_color = opts:match("highlight%s*=%s*([%a]+)")
+    if highlight_color then
+        use_highlight = true
+    else
+        -- Default color if highlight is used without a value
+        if use_highlight then
+            highlight_color = "lightgray"
+        end
+    end
+
+    -- Parse arrow option with optional offset (arrow=N)
+    local arrow_offset_value = opts:match("arrow%s*=%s*([%d%.]+)")
+    local arrow_offset_y = ARROW_OFFSET_Y
+
+    if arrow_offset_value then
+        local value = tonumber(arrow_offset_value)
+        if value and value > 0 then
+            arrow_offset_y = value
+            arrow = true  -- Enable arrow with custom offset
+        else
+            tex.error("arrow offset must be a positive number, received: " .. tostring(arrow_offset_value))
+            return
+        end
+    end
 
     -- Parse stop option (stop=N)
     local stop_at = opts:match("stop%s*=%s*(%d+)")
@@ -114,30 +151,22 @@ function draw_division(dividend, divisor, options)
     local results = successive_division(dividend, divisor, max_iterations)
     local n = #results
 
-    -- Check for custom inner sep (standalone numeric value in options)
-    -- Match a number that is NOT part of a key=value pair
-    local custom_inner_sep = nil
-    -- Split options by comma and check each token
-    for token in (opts .. ","):gmatch("([^,]*),") do
-        token = token:match("^%s*(.-)%s*$")  -- trim whitespace
-        -- Check if token is purely numeric (not a key=value pair)
-        if token:match("^[%d%.]+$") and not token:match("=") then
-            custom_inner_sep = token
-            break
-        end
-    end
-
+    -- Parse circle option with optional radius (circle=N)
+    local circle_radius = opts:match("circle%s*=%s*([%d%.]+)")
     local circle_inner_sep = CIRCLE_INNER_SEP
 
-    -- If 'circle' option is used without a numeric value, default to 0.25
-    if highlight and not custom_inner_sep then
-        circle_inner_sep = 0.25
-    elseif custom_inner_sep then
-        local value = tonumber(custom_inner_sep)
+    if circle_radius then
+        local value = tonumber(circle_radius)
         if value and value > 0 then
             circle_inner_sep = value
-            highlight = true  -- Auto-enable circles if number specified
+            use_circle = true  -- Enable circles with custom radius
+        else
+            tex.error("circle radius must be a positive number, received: " .. tostring(circle_radius))
+            return
         end
+    elseif use_circle then
+        -- If 'circle' option is used without a value, default to 0.25
+        circle_inner_sep = 0.25
     end
 
     -- Calculate widths
@@ -146,7 +175,7 @@ function draw_division(dividend, divisor, options)
 
     -- Calculate maximum circle radius for layout spacing
     local max_circle_extra = 0
-    if highlight then
+    if use_circle then
         for i = 1, n do
             local rem_width = string.len(tostring(results[i].remainder)) * CHAR_WIDTH
             local rem_radius = rem_width / 2 + circle_inner_sep
@@ -183,7 +212,7 @@ function draw_division(dividend, divisor, options)
 
     -- First bar position
     local left_space = max_column_widths[1]
-    if highlight then
+    if use_circle then
         left_space = math.max(left_space, max_column_widths[1] / 2 + max_circle_extra + CIRCLE_PADDING)
     end
     bar_positions[1] = left_space + FIXED_GAP
@@ -193,7 +222,7 @@ function draw_division(dividend, divisor, options)
     for i = 2, n do
         local column_width = max_column_widths[i]
 
-        if highlight then
+        if use_circle then
             column_width = math.max(column_width, max_column_widths[i] / 2 + max_circle_extra + CIRCLE_PADDING)
         end
 
@@ -223,16 +252,20 @@ function draw_division(dividend, divisor, options)
         -- Draw remainder at column center (ALWAYS aligned with dividend)
         local rem_center_x = column_centers[i]
 
+        -- Format remainder with optional colorbox and/or underline
+        local rem_text = tostring(rem)
+        if use_highlight then
+            rem_text = string.format("\\colorbox{%s}{%s}", highlight_color, rem_text)
+        end
         if use_uline then
-            tex.print(string.format("\\node at (%.2f, %d) (r%d) {\\uline{%s}};",
-                rem_center_x, -i, i, rem))
-        else
-            tex.print(string.format("\\node at (%.2f, %d) (r%d) {%s};",
-                rem_center_x, -i, i, rem))
+            rem_text = string.format("\\uline{%s}", rem_text)
         end
 
-        -- Draw circle around remainder if highlighting
-        if highlight then
+        tex.print(string.format("\\node at (%.2f, %d) (r%d) {%s};",
+            rem_center_x, -i, i, rem_text))
+
+        -- Draw circle around remainder if using circles
+        if use_circle then
             local rem_width = string.len(tostring(rem)) * CHAR_WIDTH
             tex.print(string.format("\\draw (r%d) circle[radius=%.3fem];", i,
                 rem_width / 2 + circle_inner_sep))
@@ -240,16 +273,23 @@ function draw_division(dividend, divisor, options)
 
         -- Draw quotient (aligned left at same distance from bar as divisor)
         local is_last = (i == n)
-        if use_uline and is_last then
-            tex.print(string.format("\\node[anchor=west] at (%.2f, %d) (q%d) {\\uline{%s}};",
-                bar_positions[i] + FIXED_GAP, -i, i, quot))
-        else
-            tex.print(string.format("\\node[anchor=west] at (%.2f, %d) (q%d) {%s};",
-                bar_positions[i] + FIXED_GAP, -i, i, quot))
+
+        -- Format quotient with optional colorbox and/or underline (only for last quotient)
+        local quot_text = tostring(quot)
+        if is_last then
+            if use_highlight then
+                quot_text = string.format("\\colorbox{%s}{%s}", highlight_color, quot_text)
+            end
+            if use_uline then
+                quot_text = string.format("\\uline{%s}", quot_text)
+            end
         end
 
-        -- Draw circle around last quotient if highlighting
-        if highlight and is_last then
+        tex.print(string.format("\\node[anchor=west] at (%.2f, %d) (q%d) {%s};",
+            bar_positions[i] + FIXED_GAP, -i, i, quot_text))
+
+        -- Draw circle around last quotient if using circles
+        if use_circle and is_last then
             local quot_width = string.len(tostring(quot)) * CHAR_WIDTH
             tex.print(string.format("\\draw (q%d) circle[radius=%.3fem];", i,
                 quot_width / 2 + circle_inner_sep))
@@ -268,7 +308,7 @@ function draw_division(dividend, divisor, options)
             local end_x = quot_right_x + BAR_END_PADDING
 
             -- Extend further if circles are present
-            if highlight then
+            if use_circle then
                 end_x = column_centers[n+1] + max_circle_extra + BAR_END_PADDING
             end
 
@@ -283,16 +323,18 @@ function draw_division(dividend, divisor, options)
 
     -- Draw arrow (for base conversion reading direction)
     if arrow then
-        -- Arrow starts below last quotient (using column center for alignment)
-        local x1 = column_centers[n+1]
-        local y1 = -n - ARROW_OFFSET_Y
+        -- Arrow starts below last quotient (right edge instead of center)
+        local last_quot_width = string.len(tostring(results[n].quotient)) * CHAR_WIDTH
+        local x1 = column_centers[n+1] + last_quot_width / 2
+        local y1 = -n - arrow_offset_y
 
         -- Goes horizontally left
         local x2 = bar_positions[n] - FIXED_GAP
 
-        -- Then diagonally to below first remainder (using column center for alignment)
-        local x3 = column_centers[1]
-        local y3 = -1 - ARROW_OFFSET_Y
+        -- Then diagonally to below first remainder (left edge instead of center)
+        local first_rem_width = string.len(tostring(results[1].remainder)) * CHAR_WIDTH
+        local x3 = column_centers[1] - first_rem_width / 2
+        local y3 = -1 - arrow_offset_y
 
         tex.print(string.format("\\draw[->, thick] (%.2f, %.2f) -- (%.2f, %.2f) -- (%.2f, %.2f);",
             x1, y1, x2, y1, x3, y3))
@@ -305,11 +347,14 @@ end
 
 % User command: \divdiagram[options]{dividend}{divisor}
 % Options:
-%   - circle, highlight: draw circles around remainders
+%   - circle: draw circles around remainders (default radius: 0.25)
+%   - circle=N: draw circles with custom radius N (e.g., circle=0.5)
+%   - highlight: add colorbox background to remainders (default: lightgray)
+%   - highlight=color: add colorbox with custom color (e.g., highlight=yellow)
 %   - uline: underline last quotient and remainder
-%   - arrow: show reading direction arrow
+%   - arrow: show reading direction arrow (default offset: 1.05)
+%   - arrow=N: show arrow with custom vertical offset N (e.g., arrow=1.5)
 %   - stop=N: stop after N divisions (default: continue until complete)
-%   - numeric value: custom inner sep for circles (e.g., 0.5)
 \newcommand{\divdiagram}[3][]{%
     \directlua{draw_division(#2, #3, "#1")}%
 }
